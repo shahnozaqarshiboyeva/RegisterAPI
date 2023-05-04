@@ -1,30 +1,50 @@
 import React, { useState } from 'react'
-import http from '../Axios'
-import { toast ,ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css';
+import http from '../Axios'
+import { useNavigate } from 'react-router-dom';
+import { ToastContainer , toast } from 'react-toastify'
+import ModalAdd from './modal'
 import Notification from './notification'
-export default function Username() {
+export default function Login() {
     const [username,setUsername]=useState('')
     const [password,setPassword]=useState('')
+    const [roles,setRoles]=useState([])
+    const [active,setActive]=useState(false)
+    const navigate=useNavigate()
     const login=(e)=>{
         e.preventDefault();
-        http.post('/login/',{
+        http.post('/api/user/token/',{
             username:username,
             password:password
+
         }).then(res=>{           
-             console.log(res);
-            if (res.status === 201) {
+            if (res.status === 404) {
                 Notification({type:'success',text:'Xatolik mavjud emas'})
+                setTimeout(()=>{
+                    navigate('/main')
+                },2000)
             }
-        }).catch((err)=>{
-            console.log(err.response.status);
+            if(res.data.access_token){
+                localStorage.setItem("token", res.data.access_token)
+              setTimeout(()=>{
+                window.location.reload()
+              },2000)
+            }
+            clearInterval()  })
+            .catch((err)=>{
+            console.log(err.response.data.roles);
+            setRoles(err.response.data.roles)
             if(err.response.status === 400){
                 Notification({type:'error',text:'Xatolik mavjud'})
+            }
+            if(err.response.data.roles){
+            setActive(prev=>!prev)
             }
         })
     }
   return (
     <div className='container'>
+        <ModalAdd modalValue={active} toggle={()=>setActive(prev=>!prev)} roles={roles} username={username} password={password}/>
         <ToastContainer/>
         <div className="row">
             <div className="col-md-6 offset-3">
